@@ -1,4 +1,10 @@
+<p align="center"><img src="assets/banner.jpg" alt="Totoversity: Fun Facts, Animated Stories"></p>
+
 # Claude Animated Shorts
+
+<img src="assets/profile.png" width="64" align="left"> Made by **Totoversity** (*Fun Facts • Animated Stories*). All shorts carry the Totoversity mark.
+
+<br clear="left">
 
 The free Claude skill from the video **"How to Make Viral Animated Shorts Using Claude (Full Workflow)"**.
 
@@ -12,6 +18,8 @@ Proven on **The Bridge That Fell for a Song**, a 67 s short about the 1831 Broug
 | `SKILL.md` | The skill: the full pipeline, every rule, every fix, and the final look values |
 | `templates/bridge/` | The full source of the bridge short: world, characters, ink, lens blur, grade, story/camera |
 | `templates/audio/` | The synthesized sound: SFX, march music, the mix with ducking and loudness |
+| `templates/branding/` | The Totoversity watermark (`Watermark.tsx`, `withWatermark()`) and avatar, applied to every short from `Root.tsx` |
+| `assets/` | Channel banner and profile picture |
 | `templates/scripts/` | Stills, side-by-side sheets, shot merge and frame-by-frame QA helpers |
 | `references/STYLE_BIBLE.md` | The script and visual formula measured from 20 reference shorts |
 | `references/reports/` | Seven measured reports: motion, depth, textures, characters, lighting, outlines, grade |
