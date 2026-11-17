@@ -10,7 +10,7 @@ import {
 } from "./toon";
 import {
   FPS, D0, FILES, ROW_GAP, COUNT, PARK, SHOTS, SNAP, DROP0, DROP1, DROP_H, V3, front, marchPhase, stomp, deckY, dropW, dropU, shapeZ,
-  smooth, clamp01, BridgeState,
+  smooth, clamp01, BridgeState, camAt, keyRange,
 } from "./story";
 import { LIGHTS } from "./lights";
 import { NOINK } from "./ink";
@@ -186,11 +186,20 @@ const lidAt = (t: number, i: number, swaps: number[] = []) => {
 const fkey = (o: object) => JSON.stringify(o, (_k, v) => (typeof v === "number" ? q(v) : v));
 
 type Who = { i: number; o: Outfit; okey: string };
+/** Camera-key reference set by stage(): camera samples + right vector over the WHOLE active camera key. Tier and light
+ *  are derived from it, not from the per-frame camera, so a slow push-in can't flip a card's canvas tier / 45-degree
+ *  light step back and forth (that re-keys the pooled canvas and a card vanishes for ONE frame, repeating every 7-9 f;
+ *  single stills never show it, only a rendered sequence does). */
+export const STABLE_CARDS = true;
+const REF: { pos: THREE.Vector3[]; cam: CamInfo } = { pos: [], cam: { pos: new THREE.Vector3(), right: new THREE.Vector3(1, 0, 0) } };
 /** one character drawing in the 600 x 1000 design space, sized by distance, lit from the scene's sun */
 const person = (cam: CamInfo, who: Who, x: number, y: number, z: number, view: { side: boolean; mirror: boolean }, fo: FrontOpts, so: SideOpts, scale = 1): Place & { tierKey: string } => {
-  const d = cam.pos.distanceTo(tmp.set(x, y + 1.2, z)) / scale;
+  let d = Infinity;
+  if (STABLE_CARDS && REF.pos.length) for (const p of REF.pos) d = Math.min(d, p.distanceTo(tmp.set(x, y + 1.2, z)));
+  else d = cam.pos.distanceTo(tmp.set(x, y + 1.2, z));
+  d /= scale;
   const [w, h, k] = tier(d);
-  const mirror = view.side && view.mirror, light = light2D(cam, mirror), seed = seedOf(who.i);
+  const mirror = view.side && view.mirror, light = light2D(STABLE_CARDS && REF.pos.length ? REF.cam : cam, mirror), seed = seedOf(who.i);
   const f2: FrontOpts = { ...fo, light, seed }, s2: SideOpts = { ...so, light, seed };
   const key = view.side ? `S|${who.okey}|${fkey(s2)}` : `F|${who.okey}|${fkey(f2)}`;
   return {
@@ -431,6 +440,14 @@ export const stage = (id: number, t: number, b: BridgeState, cam: CamInfo): Stag
   const s = SHOTS[id - 1];
   LNAME = s.light;
   findSun(cam, SUN);
+  if (STABLE_CARDS) { // lock tier + light for the whole camera key
+    const f = Math.round(t * FPS), [ka, kb] = keyRange(id, f), c0 = camAt(id, ka);
+    REF.pos = [];
+    for (let k = ka; k < kb; k += 6) REF.pos.push(new THREE.Vector3(...camAt(id, k).pos));
+    REF.pos.push(new THREE.Vector3(...camAt(id, Math.max(ka, kb - 1)).pos));
+    const fw = new THREE.Vector3(c0.look[0] - c0.pos[0], c0.look[1] - c0.pos[1], c0.look[2] - c0.pos[2]).normalize();
+    REF.cam = { pos: new THREE.Vector3(...c0.pos), right: fw.cross(new THREE.Vector3(0, 1, 0)).normalize() };
+  }
   if (s.crowd === "march" || s.crowd === "fall") column(id, t, b, cam, out);
   if (s.towns) townsfolkAt(cam, t, out);
   if (s.crowd === "water") {

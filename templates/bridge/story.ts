@@ -287,6 +287,14 @@ export const keyEnd = (id: number, f: number) => {
   return Math.max(f, e);
 };
 
+/** frames [a, b) of the camera key active at f (cut or glide start .. next key / shot end). cast.ts derives the card
+ *  resolution tier and light side from this whole span so billboards never re-key mid-shot (see STABLE_CARDS). */
+export const keyRange = (id: number, f: number): [number, number] => {
+  const keys = CAMS[id]; let i = 0;
+  while (i + 1 < keys.length && f >= keys[i + 1].f) i++;
+  return [keys[i].f, i + 1 < keys.length ? keys[i + 1].f : SHOTS[id - 1].b];
+};
+
 // ---------------- lens: depth of field + foreground framing ----------------
 /** Lens blur per shot (thin lens). cInf = blur-disc radius in px at 1080x1920 for things at infinity; 0 = all sharp.
  *  Reference: DOF on in ~1/3 of shots; when on, background sigma720 CU 4.2, MS 4.0, FS 2.7, WS 1.9,
